@@ -1,0 +1,52 @@
+AUTO IN C++ - DANGERS AND BENEFITS
+
+auto is not inherently dangerous, but it can cause silent bugs if you
+don't understand how type deduction works. auto performs compile-time
+type inference: the compiler determines the exact type from the
+initializer. Great for cutting boilerplate, but misuse can cause
+accidental deep copies, dangling references, or hidden performance costs.
+
+
+WHERE AUTO IS DANGEROUS
+
+1. It strips references (accidental copies)
+   By default auto ignores references and const. If a function
+   returns a reference to a large object, auto will copy it.
+
+   const std::vector<int>& get_large_vector();
+
+   auto my_list = get_large_vector();       // copies the whole vector
+   auto& my_list_ref = get_large_vector();  // safe: deduced as const std::vector<int>&
+
+2. The expression template / proxy trap
+   Some types (e.g. std::vector<bool>, or libraries like Eigen) return
+   proxy objects instead of the real value. auto captures the proxy,
+   not the evaluated result, which can lead to undefined behavior.
+
+   std::vector<bool> flags = {true, false, true};
+   auto first = flags[0];   // deduces a temporary proxy, not bool
+
+3. Silent type changes
+   auto matches the right-hand side exactly. If a function's return
+   type changes later, every auto variable using it changes silently
+   too, possibly breaking logic downstream without a compiler warning.
+
+
+WHERE AUTO IS USEFUL
+
+1. Verbose/complex types
+   std::map<std::string, std::vector<int>>::const_iterator it = my_map.cbegin();
+   auto it = my_map.cbegin();   // same thing, far more readable
+
+2. Lambdas
+   Lambda types are compiler-generated and unnamable, so auto is
+   required to store one directly.
+
+   auto my_lambda = [](int a, int b) { return a + b; };
+
+3. Guaranteed initialization
+   auto variables can't be declared uninitialized, which removes a
+   common source of undefined behavior.
+
+   int x;        // uninitialized, garbage memory
+   auto y = 10;   // always initialized
