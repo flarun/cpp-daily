@@ -1,2 +1,2 @@
 # cpp-daily
-Daily C++ code.
+C++ examples archive.
